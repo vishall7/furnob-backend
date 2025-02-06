@@ -4,11 +4,13 @@ dotenv.config({
 });
 
 import app from './app.js';
+import { connectDB } from './db/connect.js';
 
 const PORT = process.env.PORT || 3000;
 
 async function start() {
     try {
+        await connectDB();
         app.on('error', (error) => {
             console.log(error)
         });

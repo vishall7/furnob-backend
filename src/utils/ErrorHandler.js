@@ -1,6 +1,6 @@
 export function ErrorHandler(err, req, res, next) {
     if(res.headersSent) {
-        console.log('error', err);
+        console.log('error:- ', err.message);
         return next();
     }
 
