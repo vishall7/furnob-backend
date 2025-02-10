@@ -63,7 +63,48 @@ export const createSubCategory = asyncHandler(async (req, res) => {
 // get
 
 export const getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find({});
+  const categories = await Category.aggregate(
+    [
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: 'categoryIds',
+          as: 'products'
+        }
+      },
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: '_id',
+          foreignField: 'categoryId',
+          as: 'subcategories',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1
+              }
+            }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          productCount: { $size: '$products' },
+          subCategories: '$subcategories'
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          id: 1,
+          productCount: 1,
+          subCategories: 1
+        }
+      }
+    ]
+  );
 
   if (categories.length === 0) {
     throw new ApiError(400, "categories not found");

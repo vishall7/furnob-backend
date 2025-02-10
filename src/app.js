@@ -14,11 +14,13 @@ app.get('/', (request, response) => {
 // route imports
 import categoryRoute from './routes/category.route.js';
 import brandRoute from './routes/brand.route.js';
+import productRoute from './routes/product.route.js'; 
 
 // route registration
 
 app.use('/api/v1/category', categoryRoute);
 app.use('/api/v1/brand', brandRoute);
+app.use('/api/v1/product', productRoute);
 
 app.use(ErrorHandler);
 export default app;
