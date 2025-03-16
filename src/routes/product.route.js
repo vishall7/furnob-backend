@@ -7,26 +7,25 @@ import {
   deleteProduct,
   getProductsByCategory,
   getProductsBySubCategory,
-  productQuery,
+  filteration,
+  getRelatedProducts,
 } from "../controllers/product.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
-// query
-router.route("/filter").get(productQuery);
-
 // create product
 router
   .route("/")
   .post(
-    upload.fields([
-      { name: "mainImage", maxCount: 1 },
-      { name: "images", maxCount: 5 },
-    ]),
+    upload.array("images", 5),
     createProduct
   )
   .get(getProducts);
+
+router.route('/filter').get(filteration); 
+
+router.route('/related').get(getRelatedProducts);
 
 router
   .route("/:productId")

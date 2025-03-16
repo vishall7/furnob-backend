@@ -1,7 +1,7 @@
 import './config/config.js';
 import app from './app.js';
 import { connectDB } from './db/connect.js';
-import { agendaStart } from './db/agenda.js'; 
+import { agendaStart } from './db/agenda.js';
 
 const PORT = process.env.PORT || 3000;
 

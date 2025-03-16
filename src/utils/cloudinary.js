@@ -10,7 +10,7 @@ cloudinary.config({
 export const fileUploadToCloudinary = async (localFilePath) => {    
     try {
         if(!localFilePath) return null;
-        const response = await cloudinary.uploader.upload(localFilePath);
+        const response = await cloudinary.uploader.upload(localFilePath, {format: "webp", folder: "furnob"});
         fs.unlinkSync(localFilePath);
         return response;
     }catch (error) {

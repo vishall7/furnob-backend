@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { fileUploadToCloudinary } from "../utils/cloudinary.js";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 // product schema
 // name, short description, long description, price, discount, reviews id, brand id, [category id], sub category id,
@@ -49,25 +49,22 @@ const productSchema = new Schema(
         ref: "SubCategory",
       },
     ],
-    mainImage: {
-      type: String,
-      default: "",
-    },
     images: {
-      type: [String]
+      type: [String],
     },
     colors: { type: [String] },
     status: {
       type: String,
       enum: ["in stock", "out of stock"],
       default: "in stock",
-      required: [true, "quantity is required"],
     },
     ratings: { type: Number, default: 0 },
     tags: { type: [String] },
   },
   { timestamps: true }
 );
+
+productSchema.plugin(aggregatePaginate);
 
 productSchema.set("toJSON", {
   transform: (doc, ret) => {
