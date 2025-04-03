@@ -9,6 +9,8 @@ export const verifyToken = asyncHandler(async (req, res, next) => {
     req.cookies.AccessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
 
+    console.log(token)
+
   if (!token) {
     throw new Error("Token not found");
   }
