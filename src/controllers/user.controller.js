@@ -18,7 +18,7 @@ const generateTokens = (user) => {
 const httpOptions = {
   secure: true,
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: "None"
 };
 
 //create
