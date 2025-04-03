@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Product } from "../models/product.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import {validateMongooseId } from "../utils/validations.js";
+import { validateMongooseId } from "../utils/validations.js";
 import agenda from "../db/agenda.js";
 
 // create
@@ -111,7 +111,7 @@ export const getProducts = asyncHandler(async (req, res) => {
   if (sort === "asc") sortStage.price = 1;
   if (sort === "desc") sortStage.price = -1;
   if (sort === "latest") sortStage.createdAt = -1;
-  if(sort === "popularity") sortStage.ratings = -1;
+  if (sort === "popularity") sortStage.ratings = -1;
 
   const aggregation = Product.aggregate([
     {
@@ -130,11 +130,11 @@ export const getProducts = asyncHandler(async (req, res) => {
       },
     },
     {
-      $sort: { createdAt: -1 , ...sortStage},
+      $sort: { createdAt: -1, ...sortStage },
     },
   ]);
 
-  const options = { page: Number(page), limit: Number(limit)};
+  const options = { page: Number(page), limit: Number(limit) };
 
   const products = await Product.aggregatePaginate(aggregation, options);
 
@@ -224,7 +224,7 @@ export const getProductById = asyncHandler(async (req, res) => {
         brandId: 0,
         __v: 0,
       },
-    }    
+    },
   ]);
 
   if (product.length === 0) {
@@ -277,7 +277,7 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
   if (sort === "asc") sortStage.price = 1;
   if (sort === "desc") sortStage.price = -1;
   if (sort === "latest") sortStage.createdAt = -1;
-  if(sort === "popularity") sortStage.ratings = -1;
+  if (sort === "popularity") sortStage.ratings = -1;
 
   const aggregation = Product.aggregate([
     {
@@ -474,31 +474,33 @@ export const filteration = asyncHandler(async (req, res) => {
 
 export const getRelatedProducts = asyncHandler(async (req, res) => {
   const { categoryIds, subCategoryIds, productId, colors, tags } = req.query;
-
-  console.log("categoryIds received:", categoryIds);
-
-  
-
-
+  const categoryObjectIds = categoryIds
+    ? categoryIds.split(",").map((id) => validateMongooseId(id))
+    : [];
+  const subCategoryObjectIds = subCategoryIds
+    ? subCategoryIds.split(",").map((id) => validateMongooseId(id))
+    : [];
 
   if (!productId) throw new ApiError(400, "Product ID is required");
-  if (!validateMongooseId(productId)) throw new ApiError(400, "Invalid Product ID");
+  if (!validateMongooseId(productId))
+    throw new ApiError(400, "Invalid Product ID");
 
   const matchStrict = { _id: { $ne: validateMongooseId(productId) } };
-  if (categoryIds) matchStrict.categoryIds = { $in: categoryIds.split(",") };
-  if (subCategoryIds) matchStrict.subCategoryIds = { $in: subCategoryIds.split(",") };
+  if (categoryIds) matchStrict.categoryIds = { $in: categoryObjectIds };
+  if (subCategoryIds)
+    matchStrict.subCategoryIds = { $in: subCategoryObjectIds };
   if (colors) matchStrict.colors = { $in: colors.split(",") };
   if (tags) matchStrict.tags = { $in: tags.split(",") };
 
   const matchLoose = { _id: { $ne: validateMongooseId(productId) } };
-  if (categoryIds) matchLoose.categoryIds = { $in: categoryIds.split(",") };
-  if (subCategoryIds) matchLoose.subCategoryIds = { $in: subCategoryIds.split(",") };
+  if (categoryIds) matchLoose.categoryIds = { $in: categoryObjectIds };
+  if (subCategoryIds) matchLoose.subCategoryIds = { $in: subCategoryObjectIds };
 
   const products = await Product.aggregate([
     {
       $facet: {
-        strictMatch: [{ $match: matchStrict }, { $sample: { size: 3 } }],
-        looseMatch: [{ $match: matchLoose }, { $sample: { size: 3 } }],
+        strictMatch: [{ $match: matchStrict }, { $sample: { size: 5 } }],
+        looseMatch: [{ $match: matchLoose }, { $sample: { size: 5 } }],
       },
     },
     {
@@ -514,15 +516,43 @@ export const getRelatedProducts = asyncHandler(async (req, res) => {
         name: 1,
         price: 1,
         discount: 1,
-        mainImage: { $arrayElemAt: ["$images", 0] },
+        images: 1,
         createdAt: 1,
         status: 1,
       },
     },
-    { $limit: 3 },
+    { $limit: 10 },
   ]);
 
   if (!products.length) throw new ApiError(400, "No related products found");
 
-  return res.status(200).json(new ApiResponse(200, "Products fetched", products));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Products fetched", products));
+});
+
+export const searchProducts = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+
+  const products = await Product.aggregate([
+    {
+      $match: {
+        name: { $regex: `^${query}`, $options: "i" },
+      },
+    },
+    { $limit: 10 },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        price: 1,
+        discount: 1,
+        images: 1,
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Products fetched", products));
 });

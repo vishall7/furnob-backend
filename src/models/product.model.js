@@ -64,6 +64,8 @@ const productSchema = new Schema(
   { timestamps: true }
 );
 
+productSchema.index({ name: "text", description: "text" });
+
 productSchema.plugin(aggregatePaginate);
 
 productSchema.set("toJSON", {

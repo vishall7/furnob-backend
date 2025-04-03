@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signup, login, getUsers, logout, sendOtp, verifyOtp, getCurrentUser } from "../controllers/user.controller.js"; 
+import { signup, login, getUsers, logout, sendOtp, verifyOtp, getCurrentUser, orderInfoEmail, updateUserAddress } from "../controllers/user.controller.js"; 
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -27,6 +27,8 @@ router.route("/protected").get(verifyToken, (req, res) => {
 //logout
 router.route("/logout").post(verifyToken, logout);
 
+router.route("/order").post(verifyToken, orderInfoEmail);
+
 //sendOtp
 router.route("/send-otp").post(verifyToken, sendOtp);
 
@@ -35,6 +37,8 @@ router.route("/verify-otp").post(verifyToken, verifyOtp);
 
 // get current user
 router.route("/current").get(verifyToken, getCurrentUser);
+
+router.route("/update-address").post(verifyToken, updateUserAddress);
 
 
 export default router;

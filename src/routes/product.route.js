@@ -9,6 +9,7 @@ import {
   getProductsBySubCategory,
   filteration,
   getRelatedProducts,
+  searchProducts,
 } from "../controllers/product.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -26,6 +27,8 @@ router
 router.route('/filter').get(filteration); 
 
 router.route('/related').get(getRelatedProducts);
+
+router.route('/search').get(searchProducts);
 
 router
   .route("/:productId")

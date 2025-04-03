@@ -54,6 +54,19 @@ agenda.define("send-otp", async (job) => {
   }
 });
 
+
+agenda.define("order-info-email", async (job) => {
+  try {
+    const emailDetails = job.attrs.data;
+    const response = await sendEmail(emailDetails);
+    if(response.rejected.length > 0) {
+      throw new Error("sending email was failed");
+    }
+  } catch (error) {
+    job.fail(error);
+  }
+});
+
 export const agendaStart = async () => {
   try {
     await agenda.start();

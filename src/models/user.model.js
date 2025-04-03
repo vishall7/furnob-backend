@@ -4,6 +4,18 @@ import jwt from "jsonwebtoken";
 
 // username, email, password, role, phone, address
 
+const addressShcema = new Schema({
+    _id: false,
+    address: {
+        type: String,
+        required: true,
+    },
+    zipcode: {
+        type: String,
+        required: true,
+    },
+})
+
 const userSchema = new Schema(
     {
         username: {
@@ -24,8 +36,8 @@ const userSchema = new Schema(
             required: true,
         },
         address: {
-            type: String,    
-            default: "",
+            type: addressShcema,
+            default: null,
         },
         isAdmin: {
             type: Boolean,

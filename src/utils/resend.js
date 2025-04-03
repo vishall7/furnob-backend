@@ -1,15 +1,29 @@
-import { Resend } from 'resend';
+import nodemailer from "nodemailer";
 
-const resend = new Resend('re_CVE5FBWF_6qAeVnbLJnutBbBKL1uSQiTu');
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",  
+  port: 465,
+  secure: true,
+  auth: {
+    user: "furnobfurnitures@gmail.com",
+    pass: "lhjxlkhhbfcmrzwg",
+  },
+});
 
-export const sendEmail = async (to, subject, text) => {
-    try {
-        const response = await resend.emails.send({
-            from: "onboarding@resend.dev",
-            to, subject, html: `<p>${text}</p>`
-        });
-        return response;
-    } catch (error) {
-        console.log(error);
-    }
-}
+export const sendEmail = async ({ to, subject, text }) => {
+  try {
+    const info = await transporter.sendMail({
+      from: {
+        name: "Furnob Furnitures",
+        address: "furnobfurnitures@gmail.com",
+      },
+      to,
+      subject,
+      text,
+    })
+    return info;
+  } catch (error) {
+    console.log(error);
+  }
+};

@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { sendEmail } from "../utils/resend.js";
 import { hashedOtp, generateOtp } from "../utils/otp.js";
 import agenda from "../db/agenda.js";
+import {validateMongooseId} from "../utils/validations.js";
 
 const generateTokens = (user) => {
   const accessToken = user.generateAccessToken();
@@ -116,7 +117,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 
 // sendOtp
 export const sendOtp = asyncHandler(async (req, res) => {
-  const email = req.user?.email;
+  const { email } = req.body;
 
   if (!email) {
     throw new ApiError(400, "email is required");
@@ -124,35 +125,42 @@ export const sendOtp = asyncHandler(async (req, res) => {
 
   const otp = generateOtp();
 
-  const user = await User.findOneAndUpdate(
-    { email },
-    {
-      $set: {
-        otp: await hashedOtp(otp),
-        otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
-      },
-    },
-    { new: true }
-  );
+  // const user = await User.findOneAndUpdate(
+  //   { email },
+  //   {
+  //     $set: {
+  //       otp: await hashedOtp(otp),
+  //       otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+  //     },
+  //   },
+  //   { new: true }
+  // );
 
-  if (!user) {
-    throw new ApiError(400, "user not found");
+  // if (!user) {
+  //   throw new ApiError(400, "user not found");
+  // }
+
+  const emailSended = await sendEmail({
+    to: email,
+    subject: "OTP",
+    text: `Your OTP is ${otp}`,
+  });
+
+  if (!emailSended) {
+    throw new ApiError(400, "email not sended");
   }
 
-  const { error } = await sendEmail(
-    email,
-    "otp verification",
-    `your otp is ${otp}`
-  );
-  if (error) {
-    throw new ApiError(400, error.message);
-  }
-
-  // agenda.now("send-otp", { email, otp });
+  // agenda.now("send-otp", { email, otp: 123 });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "otp sent successfully to the user email"));
+    .json(
+      new ApiResponse(
+        200,
+        "otp sent successfully to the user email",
+        emailSended
+      )
+    );
 });
 
 //verify otp
@@ -194,4 +202,98 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, "user fetched successfully", user));
+});
+
+
+export const updateUserAddress = asyncHandler(async (req, res) => {
+  const userId = req?.user?._id;
+  const { addressObject } = req.body;
+
+  const {address, zipcode} = addressObject;
+
+  if (!userId) {
+    throw new ApiError(400, "user id is required");
+  }
+
+  if (!validateMongooseId(userId)) {
+    throw new ApiError(400, "user id is invalid");
+  }
+
+  if(!address || !zipcode) {
+    throw new ApiError(400, "All fields are mandatory");
+  }
+
+  const user = await User.findOneAndUpdate(
+    { _id: userId },
+    {
+      $set: {
+        address: {
+          address,
+          zipcode
+        }
+      },
+    },
+    { new: true }
+  );
+
+  if (!user) {
+    throw new ApiError(400, "user not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "user address updated successfully", user));
+});
+
+
+export const orderInfoEmail = asyncHandler(async (req, res) => {
+  const { order } = req.body;
+
+  if (!order) {
+    throw new ApiError(400, "order info are mandatory");
+  }
+
+  const generateOrderEmail = (order) => {
+    const { name, email, adress, zipcode, notes, checkoutSubmission } = order;
+    const { itemOrdered, subCartTotal, cartTotal, shippingDiscount } = checkoutSubmission;
+
+    const itemsList = itemOrdered
+      .map((item) => `• ${item.name} – ${item.quantity} x $${item.totalPrice}`)
+      .join("\n");
+
+    return {
+      to: email,
+      subject: "🛒 Order Confirmation – Thank You for Your Purchase!",
+      text: `Dear ${name},
+
+Thank you for your order! Here are your order details:
+
+📍 Shipping Address:
+${adress}, ${zipcode}
+
+📌 Order Notes: ${notes}
+
+🛍️ Items Ordered:
+${itemsList}
+
+💰 Subtotal: $${subCartTotal}
+🚚 Shipping Charge: $${shippingDiscount}
+💳 Total Amount: $${cartTotal}
+
+Your order is being processed. We'll notify you once it’s shipped.
+
+For any inquiries, contact us at support@example.com.
+
+🔹 Thank you for shopping with us!
+
+Best regards,  
+[Your Store Name]`,
+    };
+  };
+
+  agenda.now("order-info-email", generateOrderEmail(order));
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "order info email sent successfully"));
 });
